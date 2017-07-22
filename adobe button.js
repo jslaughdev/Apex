@@ -18,7 +18,7 @@ case '00Q': MasterObjectType = 'Lead'; break;
 default: MasterObjectType = "Lead"; 
 } 
 
-var pkg = '{!Lead.Ameritech_Package_Name__c}'; 
+var pkg = '{!Lead.Package_Name__c}'; 
 var st = '{!Lead.State}'; 
 var pp = '{!Lead.paymentprocessor__c}'; 
 
