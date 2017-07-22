@@ -28,12 +28,6 @@ if(id.length > 0)
 { 
 location.href = '/apex/echosign_dev1__AgreementTemplateProcess?masterId=' + MasterObjectId + '&TemplateId=' + id; 
 } 
-
-else if( records.length == 0) { 
-
-alert('There are no agreement templates to choose from.'); 
-
-} 
 else{ 
 
 var agreements = sforce.connection.query( "SELECT Id, Name FROM echosign_dev1__Agreement_Template__c WHERE echosign_dev1__Master_Object_Type__c = '" + MasterObjectType + "' ORDER BY Name ASC" ); 
