@@ -1,0 +1,78 @@
+/*
+ * @Joshua Slaugh - 01/09/2018
+ * -DuplicateSearch concrete class for verifying a lead is unique by phone or email across lead and account. 
+ * -Execution can be disabled by setting the bypass setting to true
+ */
+ 
+public class leadDuplicateSearch implements duplicateSearch {
+    list<lead>newLeads; //expecting trigger.new
+    public static boolean bypassDuplicateRule{get;set;}//holds the bypass setting
+    public static map<string, membership_levels__c> cs = membership_levels__c.getAll(); //Custom Setting controlling bypass
+    
+    //constructor expecting (Lead) trigger.new and bypass setting
+    public leadDuplicateSearch(list<lead>ntl){ newLeads = ntl; bypassDuplicateRule = cs.get('bypass').bypass__c; }
+    
+    //Invoked by trigger, main entry - @requiredMethod
+    public id main_search_entry(){
+        //if bypass is enabled, no duplicate found, return null
+        if(bypassDuplicateRule){ return null; }
+        
+        //Look for duplicates using lead email and phone
+        for(lead l:newLeads){
+            string email = l.email;
+            string phone = string.valueof(l.phone);
+           
+            if(email != null){
+                id dupeCheckOne = foundDuplicate_email(email); 
+                    if(dupeCheckOne != null) //no dupe found if id is null
+                        return dupeCheckOne; }//return the duplicate Id if found
+            
+            if(phone != null){
+                id dupeCheckTwo = foundDuplicate_phone(phone); 
+                    if(dupeCheckTwo != null)//no dupe found if id is null
+                        return dupeCheckTwo; }//return the duplicate Id if found
+                        
+          //if no duplicate is found, the duplicate id is null  
+        } return null;
+    }
+    
+    //returns the id of a duplicate by email - @requiredMethod
+    public id foundDuplicate_email(string email){
+        id result       = null;
+	    id duplicateId  = sosl_search(email);
+	    
+	    if(duplicateId != null){ result = duplicateId; }
+	    return result;
+    }
+    
+    //returns the id of a duplicate by Phone Number - @requiredMethod
+	public id foundDuplicate_phone(string phoneNumber){
+	    id result         = null;
+	    string cleanPhone = phoneNumber.replaceAll('[^0-9]', '');
+	    id duplicateId    = sosl_search(cleanPhone);
+	    
+	    if(duplicateId != null){ result = duplicateId; }
+	    return result;
+	}
+	
+	//SOSL search lead and account, returns duplicate record id - @requiredMethod
+    public id sosl_search(string searchItem){
+        string searchString            = 'FIND {'+searchItem+'} IN ALL FIELDS RETURNING Account(id,UniqueReferenceNumber__c,personEmail,phone), Lead(id,Unique_Reference_number__c,email,phone)';
+        system.debug('SOSL=>'+searchstring);
+        list<list<sObject>> searchlist = search.query(searchString);
+        system.debug('searchlist=>'+searchlist);
+        id recordId                    = getDuplicateId(searchlist);
+        return recordId;
+    }
+    
+    //parse sosl
+    private id getDuplicateId(list<list<sObject>>dupList){
+	    id dupId;
+	    Account[] searchAccounts = (Account[])dupList[0];        system.debug('searchAccounts'+searchAccounts );
+      Lead[] searchLeads       = (Lead[])dupList[1];           system.debug('searchLeads'+ searchLeads);
+        
+        if(searchAccounts.size()>0){  dupId = searchAccounts[0].id; }
+        else if(searchLeads.size()>0){ dupId = searchLeads[0].id; }
+        return dupId;
+    }
+}
