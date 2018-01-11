@@ -1,0 +1,50 @@
+/*
+ * @Joshua Slaugh - 01/09/2018
+ * Loan Utility for finding missing values. 
+ * Formulas reference: http://www.math4finance.com/financial-formulas.php
+ */
+
+public class loan_utility{
+
+    //set for 6% annual, ovverride with new monthly rate
+	public static decimal monthlyInterestRate = 0.0049386;  
+	
+    // Missing amortized payment -- @calc: Payment = (interest * loanAmount) / 1- (1 + rate) ^-months
+	public static decimal getAmortizedPayment(integer months, double principal){
+        decimal num     = principal * monthlyInterestRate;
+        decimal den     = 1 - (math.pow((double.valueof(monthlyInterestRate) + 1), (-1 * months)));
+        decimal payment = num / den;                                            system.debug('amortized payment===>'+payment);
+        return payment;
+    }
+    
+    // Amount of interest in the monthly payment
+    public static decimal monthlyInterestAmount(double amountWithInterestPerMonth){
+     	decimal interestPerMonth = monthlyInterestRate * amountWithInterestPerMonth;
+     	return interestPerMonth;
+    }
+
+   // Missing term -- @calc: Term = - log  [( 1- interestRate*LoanAmount / payment] /  log (1 + interestRate)
+   // Assumed 1 payment per month, result in months
+    public static integer estimatedLoanTerm(decimal payment, decimal principal){
+        
+    try{
+        decimal iR          = monthlyInterestRate;
+    	decimal numerator   = math.log( 1 - iR * principal / payment ) * -1;    system.debug('numerator====>'+numerator);
+    	decimal denominator = math.log( 1 + iR);                                system.debug('denominator====>'+denominator);
+    	decimal result      = math.abs(numerator / denominator);                system.debug('result====>'+result);
+    	decimal nper        = math.rint(result);                                system.debug('nper====>'+nper);
+    	return integer.valueof(nper); 	
+    	
+        }catch(exception infinity){
+                                                                                system.debug('Never Gonna pay it off, returned infinity==>:'+infinity);
+            return 1188; //99 years
+        }
+
+    }
+    
+    //Estimated Years Left on Payment in years - string value in salesforce
+    public static decimal termInYears(integer loanMonths){
+        decimal years = loanMonths / 12;
+        return years;
+    }
+}
